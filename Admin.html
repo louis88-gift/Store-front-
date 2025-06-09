@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ar" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>لوحة إدارة المنتجات</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      direction: rtl;
+      background: #f9f9f9;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #222;
+    }
+    form {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-size: 14px;
+      resize: vertical;
+    }
+    textarea {
+      height: 60px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+    .products-list {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    .product-item {
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .product-item:last-child {
+      border-bottom: none;
+    }
+    .product-info {
+      max-width: 70%;
+    }
+    .product-actions button {
+      background: #dc3545;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .product-actions button.edit-btn {
+      background: #007bff;
+      margin-left: 10px;
+    }
+    pre {
+      background: #eee;
+      padding: 15px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    #export-json {
+      margin-top: 20px;
+      background: #17a2b8;
+      padding: 10px 20px;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<h1>لوحة إدارة المنتجات</h1>
+
+<div id="login-screen">
+  <p>يرجى إدخال كلمة السر للمتابعة:</p>
+  <input type="password" id="password-input" placeholder="كلمة السر" />
+  <button id="login-btn">دخول</button>
+  <p id="login-error" style="color:red; display:none;">كلمة السر غير صحيحة!</p>
+</div>
+
+<div id="admin-panel" style="display:none;">
+
+  <form id="product-form">
+    <input type="hidden" id="edit-index" value="-1" />
+    <label>عنوان المنتج</label>
+    <input type="text" id="title" required />
+
+    <label>وصف المنتج</label>
+    <textarea id="description" required></textarea>
+
+    <label>رابط صورة المنتج</label>
+    <input type="text" id="image" required />
+
+    <label>رابط شراء المنتج</label>
+    <input type="text" id="link" required />
+
+    <button type="submit">إضافة / تحديث المنتج</button>
+  </form>
+
+  <div class="products-list" id="products-list"></div>
+
+  <button id="export-json">تصدير JSON محدث</button>
+
+  <pre id="exported-json" style="display:none;"></pre>
+
+</div>
+
+<script>
+  const PASSWORD = 'secret123'; // غيّرها لكلمة سر خاصة
+
+  const loginScreen = document.getElementById('login-screen');
+  const adminPanel = document.getElementById('admin-panel');
+  const loginBtn = document.getElementById('login-btn');
+  const passwordInput = document.getElementById('password-input');
+  const loginError = document.getElementById('login-error');
+
+  loginBtn.onclick = () => {
+    if (passwordInput.value === PASSWORD) {
+      loginScreen.style.display = 'none';
+      adminPanel.style.display = 'block';
+      loadProducts();
+    } else {
+      loginError.style.display = 'block';
+    }
+  };
+
+  let products = [];
+
+  function loadProducts() {
+    // هنا ضع بيانات المنتجات الأصلية يدوياً
+    // مثال:
+    products = [
+      {
+        "title": "ساعة ذكية أنيقة",
+        "description": "ساعة ذكية بشاشة لمس ومميزات تتبع الصحة.",
+        "image": "https://via.placeholder.com/300x200.png?text=Smart+Watch",
+        "link": "https://affiliate-link.example.com/product1"
+      },
+      {
+        "title": "حقيبة يد فاخرة",
+        "description": "حقيبة جلدية بتصميم عصري من ماركة مشهورة.",
+        "image": "https://via.placeholder.com/300x200.png?text=Luxury+Bag",
+        "link": "https://affiliate-link.example.com/product2"
+      }
+    ];
+    renderProducts();
+  }
+
+  function renderProducts() {
+    const list = document.getElementById('products-list');
+    list.innerHTML = '';
+    products.forEach((p, i) => {
+      const item = document.createElement('div');
+      item.className = 'product-item';
+      item.innerHTML = `
+        <div class="product-info">
+          <strong>${p.title}</strong><br/>
+          <small>${p.description}</small>
+        </div>
+        <div class="product-actions">
+          <button class="edit-btn" onclick="editProduct(${i})">تعديل</button>
+          <button onclick="deleteProduct(${i})">حذف</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  const form = document.getElementById('product-form');
+  form.onsubmit = e => {
+    e.preventDefault();
+    const index = parseInt(document.getElementById('edit-index').value);
+    const newProduct = {
+      title: document.getElementById('title').value.trim(),
+      description: document.getElementById('description').value.trim(),
+      image: document.getElementById('image').value.trim(),
+      link: document.getElementById('link').value.trim()
+    };
+
+    if (index >= 0) {
+      products[index] = newProduct;
+      document.getElementById('edit-index').value = -1;
+    } else {
+      products.push(newProduct);
+    }
+
+    form.reset();
+    renderProducts();
+  };
+
+  function editProduct(i) {
+    const p = products[i];
+    document.getElementById('title').value = p.title;
+    document.getElementById('description').value = p.description;
+    document.getElementById('image').value = p.image;
+    document.getElementById('link').value = p.link;
+    document.getElementById('edit-index').value = i;
+  }
+
+  function deleteProduct(i) {
+    if (confirm('هل تريد حذف هذا المنتج؟')) {
+      products.splice(i, 1);
+      renderProducts();
+    }
+  }
+
+  document.getElementById('export-json').onclick = () => {
+    const pre = document.getElementById('exported-json');
+    pre.style.display = 'block';
+    pre.textContent = JSON.stringify(products, null, 2);
+    // يمكن نسخ النص منه يدويًا لتحديث ملف products.json في GitHub
+  };
+</script>
+
+</body>
+</html>
